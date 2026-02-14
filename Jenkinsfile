@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = "ap-south-1"
+        AWS_REGION = "us-east-2"
         ECR_REPO = "devops-sample-app"
         ACCOUNT_ID = "<your-account-id>"
         IMAGE_TAG = "${BUILD_NUMBER}"
@@ -12,14 +12,14 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/your-repo/sample-devops-app.git'
+                git 'https://github.com/mahitha561/sample-devops-app.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 sh """
-                docker build -t $ECR_REPO:$IMAGE_TAG ./app
+                docker build -t 871700844971.dkr.ecr.us-east-2.amazonaws.com:1 ./app
                 """
             }
         }
@@ -37,11 +37,11 @@ pipeline {
         stage('Tag & Push Image') {
             steps {
                 sh """
-                docker tag $ECR_REPO:$IMAGE_TAG \
-                $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
+                docker tag 871700844971.dkr.ecr.us-east-2.amazonaws.com:1 \
+                871700844971.dkr.ecr.us-east-2.amazonaws.com/871700844971.dkr.ecr.us-east-2.amazonaws.com:1
 
                 docker push \
-                $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
+                 871700844971.dkr.ecr.us-east-2.amazonaws.com/871700844971.dkr.ecr.us-east-2.amazonaws.com:1
                 """
             }
         }
@@ -50,7 +50,7 @@ pipeline {
             steps {
                 sh """
                 kubectl set image deployment/devops-app \
-                devops-container=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
+                devops-container= 871700844971.dkr.ecr.us-east-2.amazonaws.com/871700844971.dkr.ecr.us-east-2.amazonaws.com:1
                 """
             }
         }
