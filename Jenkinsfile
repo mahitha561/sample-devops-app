@@ -3,9 +3,10 @@ pipeline {
 
     environment {
         AWS_REGION = "us-east-2"
+        ACCOUNT_ID = "871700844971"
         ECR_REPO = "devops-sample-app"
-        ACCOUNT_ID = "<your-account-id>"
         IMAGE_TAG = "${BUILD_NUMBER}"
+        EKS_CLUSTER = "sample-app-cluster"
     }
 
     stages {
@@ -18,40 +19,48 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh """
-                docker build -t 871700844971.dkr.ecr.us-east-2.amazonaws.com:1 ./app
-                """
+                sh '''
+                docker build -t $ECR_REPO:$IMAGE_TAG .
+                '''
             }
         }
 
         stage('Login to ECR') {
             steps {
-                sh """
-                aws ecr get-login-password --region us-east-2 \
-                | docker login --username AWS --password-stdin \
-                871700844971.dkr.ecr.us-east-2.amazonaws.com
-                """
+                sh '''
+                aws ecr get-login-password --region $AWS_REGION | \
+                docker login --username AWS --password-stdin \
+                $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+                '''
             }
         }
 
         stage('Tag & Push Image') {
             steps {
-                sh """
-                docker tag 871700844971.dkr.ecr.us-east-2.amazonaws.com:1 \
-                871700844971.dkr.ecr.us-east-2.amazonaws.com/871700844971.dkr.ecr.us-east-2.amazonaws.com:1
+                sh '''
+                docker tag $ECR_REPO:$IMAGE_TAG \
+                $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
 
                 docker push \
-                 871700844971.dkr.ecr.us-east-2.amazonaws.com/871700844971.dkr.ecr.us-east-2.amazonaws.com:1
-                """
+                $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
+                '''
+            }
+        }
+
+        stage('Update kubeconfig') {
+            steps {
+                sh '''
+                aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
+                '''
             }
         }
 
         stage('Deploy to EKS') {
             steps {
-                sh """
+                sh '''
                 kubectl set image deployment/devops-app \
-                devops-container= 871700844971.dkr.ecr.us-east-2.amazonaws.com/871700844971.dkr.ecr.us-east-2.amazonaws.com:1
-                """
+                devops-container=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
+                '''
             }
         }
     }
